@@ -54,6 +54,16 @@ The first OAuth2 authorization may require opening a browser and approving the G
 python3 scripts/jeff_runner.py usage --json
 ```
 
+## Low-cost G4 smoke test
+
+Before the first real H3 generation:
+
+```bash
+python3 scripts/jeff_runner.py smoke --session jeff-h3-smoke
+```
+
+This provisions G4, verifies the actual GPU/VRAM/RAM/disk/CUDA, then stops the session without downloading H3 models.
+
 ## Generate one vertical product video
 
 ```bash
