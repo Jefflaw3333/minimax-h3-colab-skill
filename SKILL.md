@@ -31,9 +31,10 @@ Jeff's verified Google AI Pro environment has exposed G4 as an RTX PRO 6000 Blac
    python3 scripts/jeff_runner.py usage --json
    ```
 3. If balance is below the configured minimum, stop before provisioning a GPU.
-4. Let the runner create G4, then verify the actual remote GPU, VRAM, RAM, disk, and CUDA before any H3 model work.
-5. If G4 allocation or the VRAM safety check fails, stop and report the failure. Do not quietly retry on A100.
-6. Generate the requested jobs. Keep multiple jobs in one batch so one live session can be reused.
+4. For setup validation, prefer the low-cost smoke test: `python3 scripts/jeff_runner.py smoke --session jeff-h3-smoke`. It creates G4, verifies hardware, then stops without downloading H3 models.
+5. For real generation, let the runner create G4, then verify the actual remote GPU, VRAM, RAM, disk, and CUDA before any H3 model work.
+6. If G4 allocation or the VRAM safety check fails, stop and report the failure. Do not quietly retry on A100.
+7. Generate the requested jobs. Keep multiple jobs in one batch so one live session can be reused.
 7. Download and validate each MP4.
 8. Stop a session created by the runner after the requested work completes.
 9. Report output path, elapsed time, actual GPU, and measured CU delta when available.
