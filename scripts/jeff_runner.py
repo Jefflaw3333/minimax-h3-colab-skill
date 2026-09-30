@@ -124,7 +124,7 @@ def patch_notebook(source: Path, target: Path) -> None:
     target.write_text(json.dumps(notebook, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
 
 
-def _preflight_script() -> str:
+def _preflight_code() -> str:
     return """import json, os, shutil, torch
 ram_total = os.sysconf("SC_PAGE_SIZE") * os.sysconf("SC_PHYS_PAGES")
 payload = {
@@ -140,10 +140,18 @@ print("H3_PREFLIGHT_JSON=" + json.dumps(payload, sort_keys=True))
 
 def remote_preflight(session: str) -> dict[str, Any]:
     with tempfile.TemporaryDirectory(prefix="h3-preflight-") as temp:
-        script = Path(temp) / "preflight.py"
-        script.write_text(_preflight_script(), encoding="utf-8")
+        notebook = Path(temp) / "preflight.ipynb"
+        notebook.write_text(
+            json.dumps({
+                "cells": [{"cell_type": "code", "execution_count": None, "metadata": {}, "outputs": [], "source": [_preflight_code()]}],
+                "metadata": {"kernelspec": {"display_name": "Python 3", "language": "python", "name": "python3"}},
+                "nbformat": 4,
+                "nbformat_minor": 5,
+            }),
+            encoding="utf-8",
+        )
         output = base.call_colab(
-            ["exec", "--session", session, "--timeout", "120", "--file", str(script)],
+            ["exec", "--session", session, "--timeout", "120", "--file", str(notebook)],
             label="remote GPU preflight",
             timeout=180,
         )
