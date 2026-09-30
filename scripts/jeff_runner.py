@@ -565,11 +565,17 @@ def main() -> int:
     usage_parser = sub.add_parser("usage", help="Read Colab compute-unit balance")
     usage_parser.add_argument("--json", action="store_true")
 
-    start_parser = sub.add_parser("start", help="Create and verify a Colab GPU session")
+    start_parser = sub.add_parser("start", help="Create and verify a persistent Colab GPU session")
     start_parser.add_argument("--session", required=True)
     start_parser.add_argument("--gpu", default=os.environ.get("COLAB_GPU", DEFAULT_GPU))
     start_parser.add_argument("--high-mem", action="store_true")
     start_parser.add_argument("--min-cu", type=float, default=float(os.environ.get("COLAB_MIN_CU", DEFAULT_MIN_CU)))
+
+    smoke_parser = sub.add_parser("smoke", help="Create G4, verify hardware, then stop without H3 model work")
+    smoke_parser.add_argument("--session", default="jeff-h3-smoke")
+    smoke_parser.add_argument("--gpu", default=os.environ.get("COLAB_GPU", DEFAULT_GPU))
+    smoke_parser.add_argument("--high-mem", action="store_true")
+    smoke_parser.add_argument("--min-cu", type=float, default=float(os.environ.get("COLAB_MIN_CU", DEFAULT_MIN_CU)))
 
     stop_parser = sub.add_parser("stop", help="Stop a Colab session")
     stop_parser.add_argument("--session", required=True)
@@ -616,6 +622,32 @@ def main() -> int:
             info = start_verified_session(args.session, args.gpu, args.high_mem)
             print(json.dumps({"ok": True, "cu_before": usage["balance"], **info}, ensure_ascii=False))
             return 0
+
+        if args.command == "smoke":
+            usage_before = require_minimum_cu(args.min_cu)
+            info = None
+            stop_error = None
+            try:
+                info = start_verified_session(args.session, args.gpu, args.high_mem)
+            finally:
+                try:
+                    base.stop_session(args.session)
+                except Exception as exc:
+                    stop_error = str(exc)
+            usage_after = safe_usage()
+            result = {
+                "ok": info is not None and stop_error is None,
+                "session": args.session,
+                "cu_before": usage_before["balance"],
+                "cu_after": usage_after["balance"] if usage_after else None,
+                "cu_consumed": cu_delta(usage_before, usage_after),
+                "cu_measurement": "measured" if usage_after else "unavailable",
+                "preflight": info,
+                "session_status": "stopped" if stop_error is None else "stop_failed",
+                "cleanup_error": stop_error,
+            }
+            print(json.dumps(result, ensure_ascii=False))
+            return 0 if result["ok"] else 1
 
         if args.command == "stop":
             base.stop_session(args.session)
