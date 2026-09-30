@@ -46,14 +46,18 @@ elif command == "upload":
 elif command == "exec":
     envs = [args[i + 1] for i, value in enumerate(args[:-1]) if value == "--env"]
     values = dict(item.split("=", 1) for item in envs)
-    output = values["H3_OUTPUT_PATH"]
-    record("exec", output=output, refs=json.loads(values["H3_REFERENCE_IMAGES"]), prompt=values["H3_PROMPT_FILE"])
-    if values.get("H3_OUTPUT_PREFIX") == os.environ.get("FAKE_FAIL_PREFIX"):
-        print("simulated inference failure", file=sys.stderr)
-        sys.exit(7)
-    remote_path = root / "remote" / output.lstrip("/")
-    remote_path.parent.mkdir(parents=True, exist_ok=True)
-    remote_path.write_bytes(b"fake video bytes")
+    if "H3_OUTPUT_PATH" not in values:
+        print('H3_PREFLIGHT_JSON={"cuda":"12.8","disk_free_gb":180.0,"gpu_name":"NVIDIA RTX PRO 6000 Blackwell Server Edition","ram_gb":176.0,"vram_gb":95.0}')
+    else:
+        output = values["H3_OUTPUT_PATH"]
+        refs = json.loads(values.get("H3_REFERENCE_IMAGES", "[]"))
+        record("exec", output=output, refs=refs, input_image=values.get("H3_INPUT_IMAGE"), prompt=values["H3_PROMPT_FILE"])
+        if values.get("H3_OUTPUT_PREFIX") == os.environ.get("FAKE_FAIL_PREFIX"):
+            print("simulated inference failure", file=sys.stderr)
+            sys.exit(7)
+        remote_path = root / "remote" / output.lstrip("/")
+        remote_path.parent.mkdir(parents=True, exist_ok=True)
+        remote_path.write_bytes(b"fake video bytes")
 elif command == "download":
     remote = args[-2]
     target = pathlib.Path(args[-1])

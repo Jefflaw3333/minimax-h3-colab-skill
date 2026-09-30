@@ -1,5 +1,7 @@
 # MiniMax H3 Colab 技能
 
+> **Jeff G4 fork：**此分支已針對 Google AI Pro / Colab 的實測環境調整。預設 G4、關閉 High-RAM、5 秒、9:16 Social（768×1376），單圖自動走 FL2VA，多圖自動走 Ref2VA，並加入 CU 低餘額保護與遠端 GPU 預檢。主要執行器為 `scripts/jeff_runner.py`。
+
 這是一個完整、可獨立使用的 Codex 技能儲存庫，能將本機參照圖片交給 Google Colab，製作短篇 MiniMax H3 Ref2VA 影片。使用者可以直接 clone、安裝技能、完成 Colab CLI 登入，再使用內附的 runner 或 Shell 啟動器。儲存庫包含：
 
 - `SKILL.md`：Codex 選用此技能時讀取的指示；
@@ -17,14 +19,14 @@
 - Python 3.11 以上版本，用於執行內附 runner。runner 只使用 Python 標準函式庫。
 - [`uv`](https://docs.astral.sh/uv/)，用來安裝 Colab CLI；也可以用其他方式讓 `colab` 出現在 `PATH`。
 - [`google-colab-cli`](https://pypi.org/project/google-colab-cli/)。本 runner 已用 Colab CLI 0.7.4 驗證，使用文件所列的 `version`、`usage`、`new`、`upload`、`exec`、`download`、`stop` 指令。目前的 CLI 版本需要 Python 3.12 以上；`uv` 可以另外管理 CLI 使用的 Python，不影響 runner 的 Python 3.11 以上需求。
-- 可使用 Colab compute units 且能配置 GPU 的 Google 帳號。A100 或其他高記憶體 runtime 可能需要對應的 Colab 方案與足夠餘額。
+- 可使用 Colab compute units 且能配置 G4 的 Google 帳號。本 fork 預設 G4，且不會在 G4 配置失敗時靜默切到 A100。
 
 如果系統有安裝選用的 `ffprobe`，runner 會檢查下載的 MP4 是否同時包含視訊與音訊串流。沒有 `ffprobe` 時，仍會檢查檔案存在且大小不為零。
 
 ## Clone 與安裝技能
 
 ```bash
-git clone <repository-url> minimax-h3-colab-skill
+git clone https://github.com/Jefflaw3333/minimax-h3-colab-skill.git
 cd minimax-h3-colab-skill
 ./install.sh
 ```

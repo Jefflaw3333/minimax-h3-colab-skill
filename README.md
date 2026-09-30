@@ -1,42 +1,129 @@
-# MiniMax H3 Colab Skill
+# MiniMax H3 Colab Skill — Jeff G4 Workflow
 
-This repository is a standalone Codex skill for creating short MiniMax H3 Ref2VA videos from local reference images through Google Colab. It includes the skill instructions, the inference notebook, a Python runner, a shell launcher, an idempotent installer, and runner tests.
+This fork adapts the original MiniMax H3 Colab Codex skill for Jeff's verified Google AI Pro / Colab environment.
 
-本儲存庫是可獨立使用的 Codex 技能，用於透過 Google Colab 將本機參照圖片製作成短篇 MiniMax H3 Ref2VA 影片。內容包含技能指示、推論 Notebook、Python runner、Shell 啟動器、可重複執行的安裝程式，以及 runner 測試。
+## Jeff defaults
 
-## Documentation
+- **GPU:** G4
+- **High RAM:** off unless explicitly requested
+- **Default duration:** 5 seconds
+- **Default production preset:** 768×1376 vertical social video
+- **Draft preset:** 544×960
+- **Landscape preset:** 1376×768
+- **Auto mode:** 1 image → FL2VA first-frame, 2–9 images → Ref2VA
+- **Low CU guard:** 3 CU
+- **No silent fallback to A100**
 
-- [繁體中文完整說明](README.zh-TW.md)
-- [Full English documentation](README.en.md)
+The workflow verifies the actual remote GPU before downloading or loading H3 models. For G4, it requires a high-VRAM allocation and stops early if the assigned hardware is unexpectedly small.
 
-## Quick start / 快速開始
+## Architecture
+
+```text
+Codex
+  ↓
+minimax-h3-colab skill
+  ↓
+Google Colab CLI + OAuth2
+  ↓
+Google AI Pro compute units
+  ↓
+G4 runtime
+  ↓
+MiniMax H3 / ComfyUI
+  ↓
+validated MP4 + CU metadata
+```
+
+## Install
 
 ```bash
-git clone https://github.com/killkli/minimax-h3-colab-skill.git
+git clone https://github.com/Jefflaw3333/minimax-h3-colab-skill.git
 cd minimax-h3-colab-skill
-./install.sh
+./install.sh --force
+
 uv python install 3.12
 uv tool install --python 3.12 google-colab-cli
 colab --auth=oauth2 usage
 ```
 
-The runner itself supports Python 3.11 and newer. The current Google Colab CLI
-release needs Python 3.12 or newer; `uv python install` supplies it without
-changing the Studio or system Python.
+The first OAuth2 authorization may require opening a browser and approving the Google account.
 
-第一次執行 `usage` 時，Colab CLI 會引導 Google OAuth2 授權。完成授權後，可用下列命令啟動一次推論：
+## Check CU balance
 
-After OAuth2 is complete, run one inference with:
+```bash
+python3 scripts/jeff_runner.py usage --json
+```
+
+## Low-cost G4 smoke test
+
+Before the first real H3 generation:
+
+```bash
+python3 scripts/jeff_runner.py smoke --session jeff-h3-smoke
+```
+
+This provisions G4, verifies the actual GPU/VRAM/RAM/disk/CUDA, then stops the session without downloading H3 models.
+
+## Generate one vertical product video
 
 ```bash
 ./run_colab_inference.sh \
-  --image /absolute/path/reference.png \
+  --image /absolute/path/product.png \
   --prompt /absolute/path/prompt.txt \
+  --preset social \
+  --duration 5 \
   --output /absolute/path/result.mp4
 ```
 
-可重複傳入 1–9 個 `--image`；順序會對應 prompt 中的 `<Picture 1>` 至 `<Picture 9>`。`prompt.txt` 會以 UTF-8 原文上傳並傳給 Notebook。
+With one image, auto mode uses first-frame / FL2VA.
 
-Repeat `--image` for 1–9 ordered references. Their order maps to `<Picture 1>` through `<Picture 9>`, and the UTF-8 prompt file is uploaded verbatim to the notebook.
+## Multiple reference images
 
-The runner uses Colab compute units and remote GPU allocation. It does not run the H3 model on the local computer. See the language-specific README for prerequisites, batch manifests, session behavior, limits, and troubleshooting.
+```bash
+./run_colab_inference.sh \
+  --image /absolute/path/person.png \
+  --image /absolute/path/product.png \
+  --prompt /absolute/path/prompt.txt \
+  --mode reference \
+  --duration 8 \
+  --output /absolute/path/result.mp4
+```
+
+With 2–9 images, auto mode uses Ref2VA.
+
+## Presets
+
+| Preset | Size | Use |
+|---|---:|---|
+| `draft` | 544×960 | fast/low-CU prompt testing |
+| `social` | 768×1376 | Shorts / Reels / TikTok production |
+| `landscape` | 1376×768 | 16:9 video |
+
+Advanced `--width` and `--height` overrides are supported; both must be multiples of 32.
+
+## Cost behavior
+
+The runner:
+- checks CU before provisioning;
+- records CU before/after when the CLI can return it;
+- verifies the actual G4 GPU before expensive model work;
+- reuses one session for sequential batch jobs;
+- stops sessions it creates when work finishes;
+- does not blindly retry a timed-out generation.
+
+## Offline tests
+
+```bash
+python3 -m unittest discover -s tests -v
+```
+
+## Key files
+
+- `SKILL.md` — instructions Codex should follow
+- `scripts/jeff_runner.py` — Jeff's G4-first production runner
+- `scripts/runner.py` — upstream-compatible base utilities
+- `run_colab_inference.sh` — simple launcher
+- `assets/MiniMax_H3_Turbo_Colab.ipynb` — bundled H3 notebook
+- `tests/` — offline unit tests
+
+The model itself runs on Google Colab GPU, not on the local computer.
