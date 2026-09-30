@@ -1,5 +1,7 @@
 # MiniMax H3 Colab Skill
 
+> **Jeff G4 fork:** this branch is adapted for the verified Google AI Pro / Colab setup. Defaults are G4, High-RAM off, 5 seconds, vertical Social 768×1376, one-image FL2VA, multi-image Ref2VA, low-CU protection, and remote GPU preflight. The primary runner is `scripts/jeff_runner.py`.
+
 This repository is a complete, standalone Codex skill for creating short MiniMax H3 Ref2VA videos from local reference images through Google Colab. Clone it, install the skill, authenticate the Colab CLI, and invoke the included runner or shell launcher. The repository contains:
 
 - `SKILL.md`: the instructions Codex loads when this skill is selected;
@@ -17,14 +19,14 @@ The local machine only prepares and uploads inputs. Model inference runs on the 
 - Python 3.11 or newer for the bundled runner. The runner uses only the Python standard library.
 - [`uv`](https://docs.astral.sh/uv/) for installing the Colab CLI, or another supported way to put `colab` on `PATH`.
 - [`google-colab-cli`](https://pypi.org/project/google-colab-cli/). The runner was validated with Colab CLI 0.7.4 and uses the documented `version`, `usage`, `new`, `upload`, `exec`, `download`, and `stop` commands. The current CLI release requires Python 3.12 or newer; `uv` can install that interpreter separately from the runner's Python 3.11+ requirement.
-- A Google account with access to Colab compute units and a GPU shape that can be allocated. An A100 or equivalent high-memory runtime may require the appropriate Colab plan and available balance.
+- A Google account with Colab compute units and access to G4. This fork defaults to G4 and does not silently fall back to A100 when G4 allocation fails.
 
 The optional `ffprobe` program is used to verify that a downloaded MP4 contains both video and audio streams. If `ffprobe` is not installed, the runner still checks that the file exists and is non-empty.
 
 ## Clone and install the skill
 
 ```bash
-git clone <repository-url> minimax-h3-colab-skill
+git clone https://github.com/Jefflaw3333/minimax-h3-colab-skill.git
 cd minimax-h3-colab-skill
 ./install.sh
 ```
